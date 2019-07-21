@@ -1,6 +1,6 @@
 [package]
 name = "proptest-attr-macro"
-version = "0.1.0"
+version = "0.2.0-pre"
 description = "Procedural attribute macro for writing proptest tests"
 documentation = "https://docs.rs/proptest-attr-macro/*"
 repository = "https://github.com/dcreager/proptest-attr-macro/"
