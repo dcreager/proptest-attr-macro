@@ -1,0 +1,16 @@
+[package]
+name = "proptest-attr-macro"
+version = "0.1.0-pre"
+authors = ["Douglas Creager <dcreager@dcreager.net>"]
+edition = "2018"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "0.4.19"
+quote = "0.6.8"
+syn = { version = "0.15", features = ["full"] }
+
+[dev-dependencies]
+proptest = "0.9"
