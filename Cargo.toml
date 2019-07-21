@@ -1,8 +1,16 @@
 [package]
 name = "proptest-attr-macro"
 version = "0.1.0-pre"
+description = "Procedural attribute macro for writing proptest tests"
+documentation = "https://docs.rs/proptest-attr-macro/*"
+repository = "https://github.com/dcreager/proptest-attr-macro/"
+readme = "README.md"
 authors = ["Douglas Creager <dcreager@dcreager.net>"]
 edition = "2018"
+license = "Apache-2.0"
+
+[badges]
+travis-ci = { repository = "dcreager/proptest-attr-macro" }
 
 [lib]
 proc-macro = true
