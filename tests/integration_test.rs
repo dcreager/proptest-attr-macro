@@ -1,7 +1,7 @@
 use proptest::prelude::prop_compose;
 use proptest_attr_macro::proptest;
 
-#[proptest(33u8..100u8)]
+#[proptest(33..100u8)]
 fn inline_strategy(x: u8) {
     assert!(x >= 33 && x < 100);
 }
@@ -17,7 +17,7 @@ fn multiple_strategies(x: u8, y: u8) {
     assert!(y >= 10 && y < 20);
 }
 
-#[proptest(1u8..5u8, 6u8..10u8)]
+#[proptest(1..5u8, 6..10u8)]
 fn multiple_inline_strategies(x: u8, y: u8) {
     assert!(x >= 1 && x < 5);
     assert!(y >= 6 && y < 10);
