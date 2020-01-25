@@ -88,7 +88,8 @@
 
 extern crate proc_macro;
 
-use proc_macro::TokenStream;
+use proc_macro::Delimiter::Parenthesis;
+use proc_macro::*;
 use quote::quote;
 use syn::parse_macro_input;
 use syn::Item;
@@ -107,14 +108,20 @@ use syn::Item;
 /// }
 /// ```
 #[proc_macro_attribute]
-pub fn proptest(_args: TokenStream, input: TokenStream) -> TokenStream {
-    let item = parse_macro_input!(input as Item);
+pub fn proptest(args: TokenStream, input: TokenStream) -> TokenStream {
+    let strategies = split_by_comma(args);
+
+    let input_for_assertion = input.clone();
+    let item = parse_macro_input!(input_for_assertion as Item);
+
+    let proptest_input = proc_macro2::TokenStream::from(add_strategies(input, strategies));
+
     match item {
-        Item::Fn(func) => {
+        Item::Fn(_) => {
             let output = quote! {
                 ::proptest::prelude::proptest! {
                     #[test]
-                    #func
+                    #proptest_input
                 }
             };
             output.into()
@@ -126,4 +133,71 @@ pub fn proptest(_args: TokenStream, input: TokenStream) -> TokenStream {
                 .into()
         }
     }
+}
+
+fn add_strategies(input: TokenStream, strategies: Vec<Vec<TokenTree>>) -> TokenStream {
+    if strategies.is_empty() {
+        return input;
+    }
+
+    let in_ident: TokenTree = TokenTree::Ident(Ident::new("in", Span::call_site()));
+
+    let mut new_stream = TokenStream::new();
+
+    for tree in input.into_iter() {
+        match tree {
+            TokenTree::Group(group) => {
+                let group = if group.delimiter() == Parenthesis {
+                    let arguments = split_by_comma(group.stream());
+
+                    let var_names: Vec<TokenTree> = arguments
+                        .into_iter()
+                        .map(|args| match &args[..] {
+                            [TokenTree::Ident(var), TokenTree::Punct(_), TokenTree::Ident(_ty)] => {
+                                TokenTree::Ident(var.clone())
+                            }
+                            _ => panic!("Unexpected signature {:?}", args),
+                        })
+                        .collect();
+
+                    let args = var_names
+                        .into_iter()
+                        .zip(strategies.clone())
+                        .map(|(var, strategy)| {
+                            let mut v = vec![var, in_ident.clone()];
+                            v.extend(strategy);
+                            v
+                        })
+                        .collect::<Vec<_>>();
+                    let sl = &args[..];
+
+                    let args = sl.join(&TokenTree::Punct(Punct::new(',', Spacing::Alone)));
+
+                    let mut stream = TokenStream::new();
+                    stream.extend(args);
+                    Group::new(Parenthesis, stream)
+                } else {
+                    group
+                };
+                new_stream.extend(vec![TokenTree::Group(group)]);
+            }
+            t => new_stream.extend(TokenStream::from(t)),
+        }
+    }
+
+    new_stream
+}
+
+fn split_by_comma(args: TokenStream) -> Vec<Vec<TokenTree>> {
+    let args = args.into_iter().collect::<Vec<_>>();
+
+    let strategies: Vec<Vec<TokenTree>> = args
+        .split(|t: &TokenTree| match t {
+            TokenTree::Punct(p) => &p.to_string() == ",",
+            _ => false,
+        })
+        .map(|v| Vec::from(v))
+        .collect::<Vec<_>>();
+
+    strategies
 }
